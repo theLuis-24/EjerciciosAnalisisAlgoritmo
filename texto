@@ -1,0 +1,105 @@
+# EJERCICIO 4. TRIANGULACIÓN DE UN TERRENO IRREGULAR
+
+**Análisis geométrico mediante determinante de orientación y algoritmo Ear Clipping**
+
+> **Planteamiento:** Una empresa de ingeniería necesita dividir un terreno irregular en regiones triangulares para realizar cálculos geométricos. El terreno está definido por cinco vértices conectados en el siguiente orden: `A(0,0)`, `B(8,0)`, `C(8,6)`, `D(4,3)` y `E(0,6)`.
+
+---
+
+## 1. Identificación de los vértices convexos y cóncavos mediante el determinante de orientación
+
+El determinante de orientación permite identificar el sentido del giro formado por tres puntos consecutivos de un polígono. Para tres puntos $P$, $Q$ y $R$ se utiliza la expresión:
+
+$$\text{Det}(P,Q,R) = (Q_x - P_x)(R_y - P_y) - (Q_y - P_y)(R_x - P_x)$$
+
+Como los vértices del terreno están ordenados en sentido antihorario, un determinante **positivo** indica un vértice convexo, uno **negativo** indica un vértice cóncavo y uno igual a **cero** indica colinealidad.
+
+Se evalúa cada vértice utilizando el anterior, el actual y el siguiente:
+
+| Vértice | Puntos utilizados | Determinante | Clasificación |
+| :--- | :--- | :---: | :--- |
+| **A** | `E(0,6)`, `A(0,0)`, `B(8,0)` | `48` | Convexo |
+| **B** | `A(0,0)`, `B(8,0)`, `C(8,6)` | `48` | Convexo |
+| **C** | `B(8,0)`, `C(8,6)`, `D(4,3)` | `24` | Convexo |
+| **D** | `C(8,6)`, `D(4,3)`, `E(0,6)` | `-24` | Cóncavo |
+| **E** | `D(4,3)`, `E(0,6)`, `A(0,0)` | `24` | Convexo |
+
+**Conclusión:** El terreno presenta cuatro vértices convexos (`A`, `B`, `C` y `E`) y un vértice cóncavo (`D`). Por lo tanto, se trata de un **polígono cóncavo**.
+
+---
+
+## 2. Cálculo de la cantidad de triángulos y diagonales internas
+
+Para un polígono simple de $n$ vértices, la cantidad de triángulos de una triangulación completa se calcula mediante:
+
+$$T = n - 2$$
+
+La cantidad de diagonales internas necesarias para esa triangulación es:
+
+$$D_i = n - 3$$
+
+En este caso, el polígono tiene $n = 5$ vértices:
+* **Triángulos:** $T = 5 - 2 = 3$
+* **Diagonales internas:** $D_i = 5 - 3 = 2$
+
+Las diagonales internas que se utilizan en la triangulación elegida son **A-D** y **B-D**. Estas dividen el terreno en tres regiones triangulares.
+
+---
+
+## 3. Descripción de una triangulación válida
+
+Una triangulación consiste en dividir un polígono en triángulos mediante diagonales internas que no se crucen entre sí y que permanezcan dentro de los límites del polígono.
+
+Para el terreno propuesto se trazan las diagonales **A-D** y **B-D**, obteniendo las siguientes regiones:
+1. **Triángulo 1:** `A-B-D`
+2. **Triángulo 2:** `B-C-D`
+3. **Triángulo 3:** `A-D-E`
+
+La división es válida porque las diagonales se encuentran dentro del terreno, comparten el vértice `D` y no se intersectan en su interior. De esta manera, el terreno queda cubierto por tres triángulos sin superposiciones.
+
+---
+
+## 4. Identificación de una primera oreja mediante Ear Clipping
+
+**Ear Clipping** (o recorte de orejas) es un algoritmo que triangula un polígono simple retirando progresivamente triángulos formados por tres vértices consecutivos. Una oreja es válida cuando:
+* El vértice central es convexo.
+* El triángulo no contiene otros vértices del polígono.
+* La diagonal que une los dos vértices vecinos es válida.
+
+En la ejecución del programa, la primera oreja identificada corresponde al vértice **C** y forma el triángulo **B-C-D**. Su determinante de orientación es `24` (giro convexo) y no hay otros vértices dentro ni sobre ese triángulo.
+
+Al retirar `C`, se incorpora la diagonal **B-D**. Después, el algoritmo retira el vértice **B** (formando el triángulo **A-B-D**) y finalmente queda el triángulo **A-D-E**, completando así la triangulación en tres regiones.
+
+---
+
+## 5. Condiciones que deben verificarse antes de retirar un vértice
+
+* **Convexidad del vértice:** El determinante debe indicar un giro convexo, teniendo en cuenta el sentido en que están ordenados los vértices.
+* **Triángulo libre de otros vértices:** Ningún otro vértice del polígono puede estar dentro ni sobre el triángulo candidato.
+* **Diagonal válida:** El segmento que conecta los dos vértices vecinos debe permanecer dentro del polígono y no debe cruzar otros lados.
+* **Polígono restante simple:** Después de retirar el vértice, el contorno restante debe conservarse sin autointersecciones.
+* **Orientación consistente:** Se debe conocer si el polígono está ordenado en sentido horario o antihorario para interpretar correctamente el signo del determinante.
+
+Estas verificaciones evitan que se retire un vértice que produzca una triangulación incorrecta o que genere triángulos superpuestos.
+
+---
+
+## 6. Función para calcular triángulos y diagonales internas a partir de $n$
+
+La cantidad de triángulos y diagonales internas depende del número de vértices del polígono. Por ello, una función que reciba $n$ debe comprobar primero que $n \ge 3$ y luego aplicar las fórmulas $T = n - 2$ y $D_i = n - 3$.
+
+Para el ejemplo del ejercicio ($n = 5$), se obtienen $T = 3$ triángulos y $D_i = 2$ diagonales internas.
+
+> **Nota técnica:** Es importante distinguir las diagonales internas que requiere una triangulación ($n - 3$) del total de diagonales posibles entre los vértices:
+> $$\text{Diagonales totales} = \frac{n(n - 3)}{2}$$
+> Para $n = 5$, el total de diagonales posibles es `5`, pero solo se necesitan `2` para completar una triangulación.
+
+---
+
+## Conclusiones generales
+
+* El determinante de orientación permite clasificar los vértices de un polígono y reconocer sus cambios de dirección. En el terreno analizado se identificaron cuatro vértices convexos y uno cóncavo.
+* La triangulación divide el terreno irregular en regiones más sencillas de estudiar. Para el polígono de cinco vértices se requieren tres triángulos y dos diagonales internas.
+* El algoritmo *Ear Clipping* permite construir la triangulación retirando orejas válidas de manera progresiva, siempre que se verifiquen las condiciones geométricas correspondientes.
+* La triangulación obtenida está formada por los triángulos `A-B-D`, `B-C-D` y `A-D-E`, utilizando las diagonales `A-D` y `B-D`.
+* El uso de funciones y herramientas de programación facilita la automatización de los cálculos y la representación gráfica de problemas geométricos.
